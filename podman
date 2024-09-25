@@ -1,0 +1,39 @@
+name: Deploy MyWebApp to Server
+
+on:
+  push:
+    branches:
+      - main  # Deploy on pushes to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Build and Deploy to Podman
+        run: |
+          ssh username@your-server-ip << 'EOF'
+            # Navigate to your project directory
+            cd /path/to/your/MyWebApp || exit
+
+            # Pull the latest code
+            git pull origin main
+
+            # Build the Podman image
+            podman build -t mywebapp .
+
+            # Stop and remove the old container if it exists
+            podman stop mywebapp || true
+            podman rm mywebapp || true
+
+            # Run the new container
+            podman run -d --name mywebapp -p 3000:3000 mywebapp
+          EOF
